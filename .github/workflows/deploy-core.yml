@@ -49,7 +49,7 @@ jobs:
     steps:
       - name: Trigger Frontend Deployment
         uses: actions/github-script@v7.0.1
-        with: 
+        with:
           script: |
             await github.rest.repos.createDispatchEvent({
               owner: 'bouzomgi',
@@ -57,3 +57,5 @@ jobs:
               event_type: 'trigger-deployment',
               client_payload: {}
             });
+        env:
+          TOKEN: ${{ secrets.CHATTER_PAT }}
