@@ -6,7 +6,7 @@ const env = cleanEnv(process.env, {
   CDK_DEFAULT_ACCOUNT: str(),
 
   DOMAIN_NAME: str(),
-  ARN_CLOUDFRONT_CERTIFICATE: str()
+  CLOUDFRONT_CERTIFICATE_ARN: str()
 })
 
 export default env

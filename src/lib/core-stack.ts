@@ -1,8 +1,6 @@
 import env from '../config'
 import { RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib'
 import { Construct } from 'constructs'
-import * as ec2 from 'aws-cdk-lib/aws-ec2'
-import * as rds from 'aws-cdk-lib/aws-rds'
 import * as s3 from 'aws-cdk-lib/aws-s3'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager'
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
@@ -37,8 +35,6 @@ export class CoreStack extends Stack {
     })
 
     // CREATE CLOUDFRONT DISTRIBUTION
-    const certificateArn = env.ARN_CLOUDFRONT_CERTIFICATE
-
     const appDistribution = new cloudfront.Distribution(
       this,
       'chatter-cloudfront-distribution',
@@ -49,7 +45,7 @@ export class CoreStack extends Stack {
         certificate: Certificate.fromCertificateArn(
           this,
           'chitchatter.link',
-          certificateArn
+          env.CLOUDFRONT_CERTIFICATE_ARN
         ),
         defaultRootObject: 'index.html',
         domainNames: [env.DOMAIN_NAME],

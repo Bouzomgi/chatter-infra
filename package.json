@@ -12,7 +12,8 @@
     "check-lint": "npx eslint --fix --ext .ts . && npx prettier --check src/",
     "bootstrap": "cdk bootstrap",
     "synth": "cdk synth",
-    "deploy": "cdk deploy"
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
