@@ -46,6 +46,7 @@ jobs:
     permissions:
       contents: write
       actions: read
+    needs: deploy-core
     steps:
       - name: Trigger Frontend Deployment
         uses: actions/github-script@v7.0.1
