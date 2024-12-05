@@ -50,3 +50,14 @@ jobs:
           token: ${{ secrets.FE_PAT_TOKEN }}
           repository: bouzomgi/chatter-fe
           event-type: trigger-frontend-deployment
+
+- name: Trigger Frontend Deployment
+  uses: actions/github-script@v6
+  with:
+    script: |
+      await github.rest.repos.createDispatchEvent({
+        owner: 'target-owner',
+        repo: 'bouzomgi/chatter-fe',
+        event_type: 'trigger-deployment',
+        client_payload: {}
+      });
