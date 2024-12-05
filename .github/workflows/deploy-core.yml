@@ -43,6 +43,9 @@ jobs:
 
   upload-site:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      workflows: write
     steps:
       - name: Trigger Frontend Deployment
         uses: actions/github-script@v7.0.1
