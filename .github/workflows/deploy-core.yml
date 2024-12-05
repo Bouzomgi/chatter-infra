@@ -58,4 +58,4 @@ jobs:
               client_payload: {}
             });
         env:
-          TOKEN: ${{ secrets.CHATTER_PAT }}
+          TOKEN: ${{ secrets.TEST }}
