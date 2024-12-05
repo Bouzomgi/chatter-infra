@@ -41,3 +41,12 @@ jobs:
       - name: Spin up Core Stack
         run: npx cdk deploy CoreStack --require-approval never
 
+  upload-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger frontend deployment
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.FE_PAT_TOKEN }}
+          repository: bouzomgi/chatter-fe
+          event-type: trigger-frontend-deployment
