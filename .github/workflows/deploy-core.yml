@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      workflows: write
+      actions: read
     steps:
       - name: Trigger Frontend Deployment
         uses: actions/github-script@v7.0.1
