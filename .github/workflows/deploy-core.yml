@@ -49,13 +49,9 @@ jobs:
     steps:
       - name: Trigger Frontend Deployment
         uses: actions/github-script@v7.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.CHATTER_PAT }}
         with:
           script: |
-            await github.rest.repos.createDispatchEvent({
-              owner: 'bouzomgi',
-              repo: 'chatter-fe',
-              event_type: 'trigger-deployment',
-              client_payload: {}
-            });
+            curl -H "Authorization: token ${{ secrets.CHATTER_PAT }}" \
+            -X POST \
+            -d '{"event_type": "trigger-deployment"}' \
+            https://api.github.com/repos/Bouzomgi/chatter-fe/dispatches
