@@ -51,11 +51,9 @@ jobs:
       actions: read
     steps:
       - name: Trigger Frontend Deployment
-        uses: actions/github-script@v7.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.CHATTER_PAT }}
-        with:
-          script: |
+        run: |
             curl -H "Authorization: token $GITHUB_TOKEN" \
             -X POST \
             -d '{"event_type": "trigger-deployment"}' \
