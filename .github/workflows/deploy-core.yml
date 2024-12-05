@@ -1,6 +1,9 @@
 name: 'Deploy Core'
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
@@ -49,9 +52,11 @@ jobs:
     steps:
       - name: Trigger Frontend Deployment
         uses: actions/github-script@v7.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.CHATTER_PAT }}
         with:
           script: |
-            curl -H "Authorization: token ${{ secrets.CHATTER_PAT }}" \
+            curl -H "Authorization: token $GITHUB_TOKEN" \
             -X POST \
             -d '{"event_type": "trigger-deployment"}' \
             https://api.github.com/repos/Bouzomgi/chatter-fe/dispatches
