@@ -49,7 +49,7 @@ jobs:
         with: 
           script: |
             await github.rest.repos.createDispatchEvent({
-              owner: 'target-owner',
+              owner: 'bouzomgi',
               repo: 'bouzomgi/chatter-fe',
               event_type: 'trigger-deployment',
               client_payload: {}
