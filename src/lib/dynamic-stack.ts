@@ -1,6 +1,5 @@
 import env from '../config'
-import { App, Stack, StackProps } from 'aws-cdk-lib'
-import * as ecr from 'aws-cdk-lib/aws-ecr'
+import { App, Stack, StackProps, Fn } from 'aws-cdk-lib'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as logs from 'aws-cdk-lib/aws-logs'
@@ -8,20 +7,21 @@ import * as iam from 'aws-cdk-lib/aws-iam'
 
 const awsEnv = {
   env: {
-    region: env.CDK_DEFAULT_REGION,
-    account: env.CDK_DEFAULT_ACCOUNT
+    region: env.AWS_REGION,
+    account: env.AWS_ACCOUNT_ID
   }
 }
 
 // CREATE VPC AND SUBNETS, ECS BACKEND
 
 export class DynamicStack extends Stack {
-  constructor(
-    scope: App,
-    id: string,
-    props: StackProps & { backendEcrRepo: ecr.Repository }
-  ) {
+  constructor(scope: App, id: string, props?: StackProps) {
     super(scope, id, props ? Object.assign(props, awsEnv) : awsEnv)
+
+    // Import CoreStack values
+    const repositoryName = Fn.importValue('backendEcrRepoName')
+
+    ///////////// VPC /////////////
 
     // CREATE VPC & SUBNETS
     const vpc = new ec2.Vpc(this, 'chatter-vpc', {
@@ -53,7 +53,7 @@ export class DynamicStack extends Stack {
     const natGatewayEip = new ec2.CfnEIP(this, 'nat-gateway-eip')
 
     // ADD NAT GATEWAY TO PUBLIC SUBNET
-    const natGateway = new ec2.CfnNatGateway(this, 'ca3-nat-gateway', {
+    const natGateway = new ec2.CfnNatGateway(this, 'chatter-nat-gateway', {
       subnetId: natGatewaySubnet.subnetId,
       allocationId: natGatewayEip.attrAllocationId
     })
@@ -82,38 +82,36 @@ export class DynamicStack extends Stack {
     )
 
     // CREATE ECS CLUSTER
-    const cluster = new ecs.Cluster(this, 'ca3-cluster', {
-      clusterName: 'ca3',
+    const cluster = new ecs.Cluster(this, 'chatter-cluster', {
+      clusterName: 'chatter',
       vpc: vpc,
       enableFargateCapacityProviders: true
     })
 
     // CREATE LOG DRIVERS FOR APPSERVER
-    const logGroup = new logs.LogGroup(this, 'ca3-log-group')
+    const logGroup = new logs.LogGroup(this, 'chatter-log-group')
 
-    const appserverLogDriver = ecs.LogDriver.awsLogs({
-      streamPrefix: 'appserver',
+    const backendLogDriver = ecs.LogDriver.awsLogs({
+      streamPrefix: 'backend',
       logGroup
     })
 
-    const appserverTaskDefinition = new ecs.FargateTaskDefinition(
+    const backendTaskDefinition = new ecs.FargateTaskDefinition(
       this,
-      'ca3-appserver-taskdefiniton',
+      'chatter-backend-taskdefiniton',
       {
         cpu: 256,
-        family: 'ca3-appserver-taskdefiniton',
+        family: 'chatter-backend',
         executionRole: ecsEcrAdmin,
         taskRole: ecsTaskExecutionRole
       }
     )
 
-    appserverTaskDefinition.addContainer('appserver', {
-      image: ecs.ContainerImage.fromRegistry(
-        props.backendEcrRepo.repositoryName
-      ),
+    backendTaskDefinition.addContainer('appserver', {
+      image: ecs.ContainerImage.fromRegistry(repositoryName),
       containerName: 'appserver',
       cpu: 0,
-      logging: appserverLogDriver,
+      logging: backendLogDriver,
       portMappings: [
         {
           name: 'appserver-80-tcp',
@@ -124,3 +122,10 @@ export class DynamicStack extends Stack {
     })
   }
 }
+
+/*
+ * try to deploy from the cluster on console
+ * add loadbalancer to service
+ * attach loadbalancer to cloudfront
+ * test it all, then go to chatter-be
+ */

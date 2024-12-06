@@ -15,10 +15,9 @@ jobs:
       id-token: write
       contents: read
     env:
-      CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
-      CDK_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
       DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
-      HOSTED_ZONE_ID: ${{ vars.HOSTED_ZONE_ID }}
       CLOUDFRONT_CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
       ECS_ECR_ADMIN_ARN: ${{ secrets.ECS_ECR_ADMIN_ARN }}
       ECS_TASK_EXECUTION_ARN: ${{ secrets.ECS_TASK_EXECUTION_ARN }}
@@ -43,6 +42,11 @@ jobs:
 
       - name: Spin up Core Stack
         run: npx cdk deploy CoreStack --require-approval never
+
+      - name: Upload Starter Image to Backend ECR Repository
+        run: |
+          chmod +x ./scripts/push-starter-image.sh
+          ./scripts/push-starter-image.sh
 
       - name: Wait for Website to be Available
         run: |

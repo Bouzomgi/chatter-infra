@@ -1,5 +1,5 @@
 import env from '../config'
-import { App, Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib'
+import { App, Stack, StackProps, RemovalPolicy, CfnOutput } from 'aws-cdk-lib'
 import * as s3 from 'aws-cdk-lib/aws-s3'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager'
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
@@ -8,19 +8,18 @@ import * as cdkTags from 'aws-cdk-lib/core'
 import * as route53 from 'aws-cdk-lib/aws-route53'
 import * as route53_targets from 'aws-cdk-lib/aws-route53-targets'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
+import * as ecs from 'aws-cdk-lib/aws-ecs'
 
 const awsEnv = {
   env: {
-    region: env.CDK_DEFAULT_REGION,
-    account: env.CDK_DEFAULT_ACCOUNT
+    region: env.AWS_REGION,
+    account: env.AWS_ACCOUNT_ID
   }
 }
 
 // CREATE S3 WEBSERVER, CLOUDFRONT DISTRIBUTION, ROUTE53 RECORDS
 
 export class CoreStack extends Stack {
-  public readonly backendEcrRepo: ecr.Repository
-
   constructor(scope: App, id: string, props?: StackProps) {
     super(scope, id, props ? Object.assign(props, awsEnv) : awsEnv)
 
@@ -40,10 +39,10 @@ export class CoreStack extends Stack {
     })
 
     // CREATE ECR REPOSITORY FOR BACKEND
-    this.backendEcrRepo = new ecr.Repository(this, 'chatter-backend-repo', {
+    const backendEcrRepo = new ecr.Repository(this, 'chatter-backend-repo', {
       removalPolicy: RemovalPolicy.DESTROY,
       emptyOnDelete: true,
-      repositoryName: 'chatter-backend'
+      repositoryName: 'chatter-be'
     })
 
     // CREATE CLOUDFRONT DISTRIBUTION
@@ -66,12 +65,12 @@ export class CoreStack extends Stack {
     )
 
     //POINT ROUTE53 TO CLOUDFRONT DISTRIBUTION
-    const hostedZone = route53.HostedZone.fromHostedZoneAttributes(
+
+    const hostedZone = route53.HostedZone.fromLookup(
       this,
       'chatter-hosted-zone',
       {
-        hostedZoneId: env.HOSTED_ZONE_ID,
-        zoneName: env.DOMAIN_NAME
+        domainName: env.DOMAIN_NAME
       }
     )
 
@@ -92,5 +91,10 @@ export class CoreStack extends Stack {
     })
 
     cdkTags.Tags.of(appDistribution).add('project', 'chatter')
+
+    new CfnOutput(this, 'RepositoryName', {
+      value: backendEcrRepo.repositoryName,
+      exportName: 'backendEcrRepoName'
+    })
   }
 }

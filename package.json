@@ -13,7 +13,8 @@
     "bootstrap": "cdk bootstrap",
     "synth": "cdk synth",
     "deploy": "cdk deploy",
-    "destroy": "cdk destroy"
+    "destroy": "cdk destroy",
+    "local:deploy-core": "npm run deploy CoreStack && export $(cat .env | xargs) && ./scripts/push-starter-image.sh"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",

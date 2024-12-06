@@ -29,3 +29,10 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 * Set up RDS
 * Ensure I can update content on S3 via Jenkins
   * Same with ECS
+
+
+## Have ECS layer accessible from URL
+* Add ECS cluster, taskDefinition, service to coreStack
+* Fix logic in BE to publish to ECR & deploy on ECS
+* Correct DynamicStack
+  * Wire up everything

@@ -6,5 +6,12 @@
     "us-east-1d",
     "us-east-1e",
     "us-east-1f"
-  ]
+  ],
+  "acknowledged-issue-numbers": [
+    32238
+  ],
+  "hosted-zone:account=338089912077:domainName=chitchatter.link:region=us-east-1": {
+    "Id": "/hostedzone/Z06502983OZPJLI74S169",
+    "Name": "chitchatter.link."
+  }
 }
