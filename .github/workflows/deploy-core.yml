@@ -49,7 +49,7 @@ jobs:
           INTERVAL=5   # Interval between checks in seconds
 
           for ((i=0; i<$TIMEOUT; i+=$INTERVAL)); do
-            if curl --silent --head --fail $URL; then
+            if curl --silent --head --fail --resolve "${{ vars.DOMAIN_NAME }}:443::${URL}" $URL; then
               echo "Website is up. Proceeding with the next step."
               exit 0
             fi
