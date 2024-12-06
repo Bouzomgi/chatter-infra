@@ -37,6 +37,9 @@ export class CoreStack extends Stack {
       removalPolicy: RemovalPolicy.DESTROY,
       websiteIndexDocument: 'index.html'
     })
+    console.log('CHICKEN')
+    console.log(env.BACKEND_ECR_REPO_NAME)
+    console.log('SOUP')
 
     // CREATE ECR REPOSITORY FOR BACKEND
     const backendEcrRepo = new ecr.Repository(this, 'chatter-backend-repo', {
