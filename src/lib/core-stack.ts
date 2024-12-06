@@ -41,6 +41,7 @@ export class CoreStack extends Stack {
 
     // CREATE ECR REPOSITORY FOR BACKEND
     this.backendEcrRepo = new ecr.Repository(this, 'chatter-backend-repo', {
+      removalPolicy: RemovalPolicy.DESTROY,
       emptyOnDelete: true,
       repositoryName: 'chatter-backend'
     })
