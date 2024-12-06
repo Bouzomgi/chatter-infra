@@ -1,4 +1,4 @@
-import env from '../config'
+import { dynamicEnv } from '../config'
 import { App, Stack, StackProps } from 'aws-cdk-lib'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
@@ -10,8 +10,8 @@ import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager'
 
 const awsEnv = {
   env: {
-    region: env.CDK_DEFAULT_REGION,
-    account: env.CDK_DEFAULT_ACCOUNT
+    region: dynamicEnv.CDK_DEFAULT_REGION,
+    account: dynamicEnv.CDK_DEFAULT_ACCOUNT
   }
 }
 
@@ -75,12 +75,12 @@ export class DynamicStack extends Stack {
     const ecsEcrAdmin = iam.Role.fromRoleArn(
       this,
       'ecs-ecr-admin',
-      env.ARN_ECS_ECR_ADMIN
+      dynamicEnv.ECS_ECR_ADMIN_ARN
     )
     const ecsTaskExecutionRole = iam.Role.fromRoleArn(
       this,
       'ecs-task-execution-role',
-      env.ARN_ECS_TASK_EXECUTION
+      dynamicEnv.ECS_TASK_EXECUTION_ARN
     )
 
     // CREATE ECS CLUSTER

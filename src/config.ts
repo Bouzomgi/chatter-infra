@@ -1,16 +1,24 @@
 import { cleanEnv, str } from 'envalid'
 import 'dotenv/config'
 
-const env = cleanEnv(process.env, {
+const commonFields = {
   CDK_DEFAULT_REGION: str(),
-  CDK_DEFAULT_ACCOUNT: str(),
+  CDK_DEFAULT_ACCOUNT: str()
+}
 
-  DOMAIN_NAME: str(),
-  HOSTED_ZONE_ID: str(),
-  CLOUDFRONT_CERTIFICATE_ARN: str(),
+export const coreEnv = cleanEnv(
+  process.env,
+  Object.assign(commonFields, {
+    DOMAIN_NAME: str(),
+    HOSTED_ZONE_ID: str(),
+    CLOUDFRONT_CERTIFICATE_ARN: str()
+  })
+)
 
-  ARN_ECS_ECR_ADMIN: str(),
-  ARN_ECS_TASK_EXECUTION: str()
-})
-
-export default env
+export const dynamicEnv = cleanEnv(
+  process.env,
+  Object.assign(commonFields, {
+    ECS_ECR_ADMIN_ARN: str(),
+    ECS_TASK_EXECUTION_ARN: str()
+  })
+)
