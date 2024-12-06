@@ -22,8 +22,8 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
   * new BackendInfraStack(app, 'BackendInfraStack', {staticAssetsBucket: staticAssetsStack.bucket});
   
 ## Milestones
-* Have S3 bucket webpage accessible from IP
-  * Same with URL
+* |COMPLETE| Have S3 bucket webpage accessible from IP
+  * |COMPLETE| Same with URL
 * Have ECS layer accessible from URL
 * Have S3 content be able to hit the ECS layer
 * Set up RDS
