@@ -1,6 +1,5 @@
 import env from '../config'
-import { RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib'
-import { Construct } from 'constructs'
+import { App, Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib'
 import * as s3 from 'aws-cdk-lib/aws-s3'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager'
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
@@ -8,6 +7,7 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins'
 import * as cdkTags from 'aws-cdk-lib/core'
 import * as route53 from 'aws-cdk-lib/aws-route53'
 import * as route53_targets from 'aws-cdk-lib/aws-route53-targets'
+import * as ecr from 'aws-cdk-lib/aws-ecr'
 
 const awsEnv = {
   env: {
@@ -16,10 +16,12 @@ const awsEnv = {
   }
 }
 
-// CREATE VPC AND SUBNETS, RDS INSTANCE, S3 WEBSERVER, EC2 BACKEND, CLOUDFRONT DISTRIBUTION
+// CREATE S3 WEBSERVER, CLOUDFRONT DISTRIBUTION, ROUTE53 RECORDS
 
 export class CoreStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  public readonly backendEcrRepo: ecr.Repository
+
+  constructor(scope: App, id: string, props?: StackProps) {
     super(scope, id, props ? Object.assign(props, awsEnv) : awsEnv)
 
     // CREATE S3 BUCKET FOR WEBSERVER
@@ -35,6 +37,12 @@ export class CoreStack extends Stack {
       publicReadAccess: true,
       removalPolicy: RemovalPolicy.DESTROY,
       websiteIndexDocument: 'index.html'
+    })
+
+    // CREATE ECR REPOSITORY FOR BACKEND
+    this.backendEcrRepo = new ecr.Repository(this, 'chatter-backend-repo', {
+      emptyOnDelete: true,
+      repositoryName: 'chatter-backend'
     })
 
     // CREATE CLOUDFRONT DISTRIBUTION

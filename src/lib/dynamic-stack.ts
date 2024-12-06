@@ -1,12 +1,12 @@
 import env from '../config'
-import { RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib'
-import { Construct } from 'constructs'
+import { App, Stack, StackProps } from 'aws-cdk-lib'
+import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
-import * as rds from 'aws-cdk-lib/aws-rds'
-import * as s3 from 'aws-cdk-lib/aws-s3'
-import { Certificate } from 'aws-cdk-lib/aws-certificatemanager'
-import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
-import * as origins from 'aws-cdk-lib/aws-cloudfront-origins'
+import * as ecs from 'aws-cdk-lib/aws-ecs'
+import * as logs from 'aws-cdk-lib/aws-logs'
+import * as iam from 'aws-cdk-lib/aws-iam'
+import * as ssm from 'aws-cdk-lib/aws-ssm'
+import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager'
 
 const awsEnv = {
   env: {
@@ -15,10 +15,14 @@ const awsEnv = {
   }
 }
 
-// CREATE VPC AND SUBNETS, RDS INSTANCE, S3 WEBSERVER, EC2 BACKEND, CLOUDFRONT DISTRIBUTION
+// CREATE VPC AND SUBNETS, ECS BACKEND
 
 export class DynamicStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(
+    scope: App,
+    id: string,
+    props: StackProps & { backendEcrRepo: ecr.Repository }
+  ) {
     super(scope, id, props ? Object.assign(props, awsEnv) : awsEnv)
 
     // CREATE VPC & SUBNETS
@@ -44,40 +48,6 @@ export class DynamicStack extends Stack {
       vpcName: 'chatter-vpc'
     })
 
-    // CREATE RDS SECURITY GROUP
-    const rdsSecurityGroup = new ec2.SecurityGroup(
-      this,
-      'chatter-rds-security-group',
-      {
-        vpc: vpc
-      }
-    )
-
-    rdsSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(3306))
-
-    // CREATE RDS INSTANCE
-    new rds.DatabaseInstance(this, 'chatter-rds-instance', {
-      engine: rds.DatabaseInstanceEngine.MYSQL,
-      vpc: vpc,
-      allocatedStorage: 20,
-      availabilityZone: 'us-east-1a',
-      credentials: {
-        secretName: 'chatter-rds-creds',
-        username: 'admin'
-      },
-      databaseName: 'chatterdb',
-      deletionProtection: false,
-      instanceType: ec2.InstanceType.of(
-        ec2.InstanceClass.T3,
-        ec2.InstanceSize.MICRO
-      ),
-      securityGroups: [rdsSecurityGroup],
-      port: 3306,
-      vpcSubnets: {
-        subnetGroupName: 'server'
-      }
-    })
-
     const natGatewaySubnet = vpc.publicSubnets.filter(
       (elem) => elem.availabilityZone == 'us-east-1a'
     )[0]
@@ -97,6 +67,62 @@ export class DynamicStack extends Stack {
         destinationCidrBlock: '0.0.0.0/0',
         natGatewayId: natGateway.attrNatGatewayId
       })
+    })
+
+    ///////////// ECS /////////////
+
+    // GET REFERENCES TO EXISTING ROLES TO BE USED BY ECS
+    const ecsEcrAdmin = iam.Role.fromRoleArn(
+      this,
+      'ecs-ecr-admin',
+      env.ARN_ECS_ECR_ADMIN
+    )
+    const ecsTaskExecutionRole = iam.Role.fromRoleArn(
+      this,
+      'ecs-task-execution-role',
+      env.ARN_ECS_TASK_EXECUTION
+    )
+
+    // CREATE ECS CLUSTER
+    const cluster = new ecs.Cluster(this, 'ca3-cluster', {
+      clusterName: 'ca3',
+      vpc: vpc,
+      enableFargateCapacityProviders: true
+    })
+
+    // CREATE LOG DRIVERS FOR APPSERVER
+    const logGroup = new logs.LogGroup(this, 'ca3-log-group')
+
+    const appserverLogDriver = ecs.LogDriver.awsLogs({
+      streamPrefix: 'appserver',
+      logGroup
+    })
+
+    const appserverTaskDefinition = new ecs.FargateTaskDefinition(
+      this,
+      'ca3-appserver-taskdefiniton',
+      {
+        cpu: 256,
+        family: 'ca3-appserver-taskdefiniton',
+        executionRole: ecsEcrAdmin,
+        taskRole: ecsTaskExecutionRole
+      }
+    )
+
+    appserverTaskDefinition.addContainer('appserver', {
+      image: ecs.ContainerImage.fromRegistry(
+        props.backendEcrRepo.repositoryName
+      ),
+      containerName: 'appserver',
+      cpu: 0,
+      logging: appserverLogDriver,
+      portMappings: [
+        {
+          name: 'appserver-80-tcp',
+          containerPort: 80,
+          hostPort: 80
+        }
+      ]
     })
   }
 }
