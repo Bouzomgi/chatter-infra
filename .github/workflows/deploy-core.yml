@@ -44,12 +44,11 @@ jobs:
 
       - name: Wait for Website to be Available
         run: |
-          URL="https://${{ vars.DOMAIN_NAME }}"
           TIMEOUT=180  # Timeout in seconds (3 minutes)
           INTERVAL=5   # Interval between checks in seconds
 
           for ((i=0; i<$TIMEOUT; i+=$INTERVAL)); do
-            if curl --silent --head --fail --resolve "${{ vars.DOMAIN_NAME }}:443::${URL}" $URL; then
+            if dig +short ${{ vars.DOMAIN_NAME }}; then
               echo "Website is up. Proceeding with the next step."
               exit 0
             fi
