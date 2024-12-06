@@ -42,7 +42,7 @@ export class CoreStack extends Stack {
     const backendEcrRepo = new ecr.Repository(this, 'chatter-backend-repo', {
       removalPolicy: RemovalPolicy.DESTROY,
       emptyOnDelete: true,
-      repositoryName: 'chatter-be'
+      repositoryName: env.BACKEND_ECR_REPO_NAME
     })
 
     // CREATE CLOUDFRONT DISTRIBUTION
@@ -91,10 +91,5 @@ export class CoreStack extends Stack {
     })
 
     cdkTags.Tags.of(appDistribution).add('project', 'chatter')
-
-    new CfnOutput(this, 'RepositoryName', {
-      value: backendEcrRepo.repositoryName,
-      exportName: 'backendEcrRepoName'
-    })
   }
 }

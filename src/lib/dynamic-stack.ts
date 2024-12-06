@@ -18,9 +18,6 @@ export class DynamicStack extends Stack {
   constructor(scope: App, id: string, props?: StackProps) {
     super(scope, id, props ? Object.assign(props, awsEnv) : awsEnv)
 
-    // Import CoreStack values
-    const repositoryName = Fn.importValue('backendEcrRepoName')
-
     ///////////// VPC /////////////
 
     // CREATE VPC & SUBNETS
@@ -108,7 +105,7 @@ export class DynamicStack extends Stack {
     )
 
     backendTaskDefinition.addContainer('appserver', {
-      image: ecs.ContainerImage.fromRegistry(repositoryName),
+      image: ecs.ContainerImage.fromRegistry(env.BACKEND_ECR_REPO_NAME),
       containerName: 'appserver',
       cpu: 0,
       logging: backendLogDriver,

@@ -17,10 +17,6 @@ jobs:
     env:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       AWS_REGION: ${{ vars.AWS_REGION }}
-      DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
-      CLOUDFRONT_CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
-      ECS_ECR_ADMIN_ARN: ${{ secrets.ECS_ECR_ADMIN_ARN }}
-      ECS_TASK_EXECUTION_ARN: ${{ secrets.ECS_TASK_EXECUTION_ARN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

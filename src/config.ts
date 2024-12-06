@@ -6,6 +6,7 @@ const commonEnv = cleanEnv(process.env, {
   AWS_ACCOUNT_ID: str(),
 
   DOMAIN_NAME: str(),
+  BACKEND_ECR_REPO_NAME: str(),
   CLOUDFRONT_CERTIFICATE_ARN: str(),
 
   ECS_ECR_ADMIN_ARN: str(),
