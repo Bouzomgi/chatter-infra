@@ -1,12 +1,10 @@
-import { getDynamicEnv } from '../config'
+import env from '../config'
 import { App, Stack, StackProps } from 'aws-cdk-lib'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as logs from 'aws-cdk-lib/aws-logs'
 import * as iam from 'aws-cdk-lib/aws-iam'
-
-const env = getDynamicEnv()
 
 const awsEnv = {
   env: {

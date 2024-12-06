@@ -1,4 +1,4 @@
-import { getCoreEnv } from '../config'
+import env from '../config'
 import { App, Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib'
 import * as s3 from 'aws-cdk-lib/aws-s3'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager'
@@ -8,8 +8,6 @@ import * as cdkTags from 'aws-cdk-lib/core'
 import * as route53 from 'aws-cdk-lib/aws-route53'
 import * as route53_targets from 'aws-cdk-lib/aws-route53-targets'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
-
-const env = getCoreEnv()
 
 const awsEnv = {
   env: {
