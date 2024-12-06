@@ -6,6 +6,8 @@ import { Certificate } from 'aws-cdk-lib/aws-certificatemanager'
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins'
 import * as cdkTags from 'aws-cdk-lib/core'
+import * as route53 from 'aws-cdk-lib/aws-route53'
+import * as route53_targets from 'aws-cdk-lib/aws-route53-targets'
 
 const awsEnv = {
   env: {
@@ -45,7 +47,7 @@ export class CoreStack extends Stack {
         },
         certificate: Certificate.fromCertificateArn(
           this,
-          'chitchatter.link',
+          env.DOMAIN_NAME,
           env.CLOUDFRONT_CERTIFICATE_ARN
         ),
         defaultRootObject: 'index.html',
@@ -53,6 +55,32 @@ export class CoreStack extends Stack {
         geoRestriction: cloudfront.GeoRestriction.allowlist('US')
       }
     )
+
+    //POINT ROUTE53 TO CLOUDFRONT DISTRIBUTION
+    const hostedZone = route53.HostedZone.fromHostedZoneAttributes(
+      this,
+      'chatter-hosted-zone',
+      {
+        hostedZoneId: env.HOSTED_ZONE_ID,
+        zoneName: env.DOMAIN_NAME
+      }
+    )
+
+    new route53.ARecord(this, 'AliasRecordIPv4', {
+      zone: hostedZone,
+      recordName: env.DOMAIN_NAME,
+      target: route53.RecordTarget.fromAlias(
+        new route53_targets.CloudFrontTarget(appDistribution)
+      )
+    })
+
+    new route53.AaaaRecord(this, 'AliasRecordIPv6', {
+      zone: hostedZone,
+      recordName: env.DOMAIN_NAME,
+      target: route53.RecordTarget.fromAlias(
+        new route53_targets.CloudFrontTarget(appDistribution)
+      )
+    })
 
     cdkTags.Tags.of(appDistribution).add('project', 'chatter')
   }
