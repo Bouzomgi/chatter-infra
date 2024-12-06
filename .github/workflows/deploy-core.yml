@@ -57,7 +57,7 @@ jobs:
             sleep $INTERVAL
           done
 
-          echo "Website did not become available within 5 minutes. Exiting with failure."
+          echo "Website did not become available within 3 minutes. Exiting with failure."
           exit 1
 
   upload-site:
