@@ -36,7 +36,7 @@ export class DynamicStack extends Stack {
         },
         {
           cidrMask: 20,
-          name: 'server',
+          name: 'api',
           subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
         }
       ],
@@ -89,37 +89,54 @@ export class DynamicStack extends Stack {
     const logGroup = new logs.LogGroup(this, 'chatter-log-group')
 
     const backendLogDriver = ecs.LogDriver.awsLogs({
-      streamPrefix: 'backend',
+      streamPrefix: 'api',
       logGroup
     })
 
     const backendTaskDefinition = new ecs.FargateTaskDefinition(
       this,
-      'chatter-backend-taskdefiniton',
+      'api-task',
       {
         cpu: 256,
-        family: 'chatter-backend',
+        family: 'chatter-be',
         executionRole: ecsEcrAdmin,
         taskRole: ecsTaskExecutionRole
       }
     )
 
-    backendTaskDefinition.addContainer('appserver', {
+    backendTaskDefinition.addContainer('api-container', {
       image: ecs.ContainerImage.fromRegistry(env.BACKEND_ECR_REPO_NAME),
-      containerName: 'appserver',
+      containerName: 'api-container',
       cpu: 0,
       logging: backendLogDriver,
       portMappings: [
         {
-          name: 'appserver-80-tcp',
+          name: 'api-80-tcp',
           containerPort: 80,
           hostPort: 80
         }
       ]
     })
+
+    // CREATE WEB SERVER SECURITY GROUP
+    const backendSecurityGroup = new ec2.SecurityGroup(this, 'api-sg', {
+      vpc: vpc,
+      allowAllOutbound: true
+    })
+
+    // SPIN UP BACKEND SERVICE
+    const backendService = new ecs.FargateService(this, 'api-service', {
+      assignPublicIp: true, //to remove
+      cluster,
+      securityGroups: [backendSecurityGroup],
+      serviceName: 'api-service',
+      taskDefinition: backendTaskDefinition,
+      vpcSubnets: {
+        subnetGroupName: 'api'
+      }
+    })
   }
 }
-
 /*
  * try to deploy from the cluster on console
  * add loadbalancer to service
