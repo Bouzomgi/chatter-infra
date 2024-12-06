@@ -1,4 +1,4 @@
-import { coreEnv } from '../config'
+import { getCoreEnv } from '../config'
 import { App, Stack, StackProps, RemovalPolicy } from 'aws-cdk-lib'
 import * as s3 from 'aws-cdk-lib/aws-s3'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager'
@@ -9,10 +9,12 @@ import * as route53 from 'aws-cdk-lib/aws-route53'
 import * as route53_targets from 'aws-cdk-lib/aws-route53-targets'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
 
+const env = getCoreEnv()
+
 const awsEnv = {
   env: {
-    region: coreEnv.CDK_DEFAULT_REGION,
-    account: coreEnv.CDK_DEFAULT_ACCOUNT
+    region: env.CDK_DEFAULT_REGION,
+    account: env.CDK_DEFAULT_ACCOUNT
   }
 }
 
@@ -55,11 +57,11 @@ export class CoreStack extends Stack {
         },
         certificate: Certificate.fromCertificateArn(
           this,
-          coreEnv.DOMAIN_NAME,
-          coreEnv.CLOUDFRONT_CERTIFICATE_ARN
+          env.DOMAIN_NAME,
+          env.CLOUDFRONT_CERTIFICATE_ARN
         ),
         defaultRootObject: 'index.html',
-        domainNames: [coreEnv.DOMAIN_NAME],
+        domainNames: [env.DOMAIN_NAME],
         geoRestriction: cloudfront.GeoRestriction.allowlist('US')
       }
     )
@@ -69,14 +71,14 @@ export class CoreStack extends Stack {
       this,
       'chatter-hosted-zone',
       {
-        hostedZoneId: coreEnv.HOSTED_ZONE_ID,
-        zoneName: coreEnv.DOMAIN_NAME
+        hostedZoneId: env.HOSTED_ZONE_ID,
+        zoneName: env.DOMAIN_NAME
       }
     )
 
     new route53.ARecord(this, 'AliasRecordIPv4', {
       zone: hostedZone,
-      recordName: coreEnv.DOMAIN_NAME,
+      recordName: env.DOMAIN_NAME,
       target: route53.RecordTarget.fromAlias(
         new route53_targets.CloudFrontTarget(appDistribution)
       )
@@ -84,7 +86,7 @@ export class CoreStack extends Stack {
 
     new route53.AaaaRecord(this, 'AliasRecordIPv6', {
       zone: hostedZone,
-      recordName: coreEnv.DOMAIN_NAME,
+      recordName: env.DOMAIN_NAME,
       target: route53.RecordTarget.fromAlias(
         new route53_targets.CloudFrontTarget(appDistribution)
       )
