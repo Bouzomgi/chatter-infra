@@ -44,7 +44,7 @@ jobs:
 
       - name: Wait for Website to be Available
         run: |
-          URL="https://${vars.DOMAIN_NAME}"
+          URL="https://${{ vars.DOMAIN_NAME }}"
           TIMEOUT=180  # Timeout in seconds (3 minutes)
           INTERVAL=5   # Interval between checks in seconds
 
