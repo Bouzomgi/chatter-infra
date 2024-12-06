@@ -5,8 +5,6 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as logs from 'aws-cdk-lib/aws-logs'
 import * as iam from 'aws-cdk-lib/aws-iam'
-import * as ssm from 'aws-cdk-lib/aws-ssm'
-import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager'
 
 const env = getDynamicEnv()
 
