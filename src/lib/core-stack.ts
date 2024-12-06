@@ -5,6 +5,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager'
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins'
+import * as cdkTags from 'aws-cdk-lib/core'
 
 const awsEnv = {
   env: {
@@ -52,5 +53,7 @@ export class CoreStack extends Stack {
         geoRestriction: cloudfront.GeoRestriction.allowlist('US')
       }
     )
+
+    cdkTags.Tags.of(appDistribution).add('project', 'chatter')
   }
 }
