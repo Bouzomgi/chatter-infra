@@ -42,6 +42,24 @@ jobs:
       - name: Spin up Core Stack
         run: npx cdk deploy CoreStack --require-approval never
 
+      - name: Wait for Website to be Available
+        run: |
+          URL="https://${vars.DOMAIN_NAME}"
+          TIMEOUT=180  # Timeout in seconds (3 minutes)
+          INTERVAL=5   # Interval between checks in seconds
+
+          for ((i=0; i<$TIMEOUT; i+=$INTERVAL)); do
+            if curl --silent --head --fail $URL; then
+              echo "Website is up. Proceeding with the next step."
+              exit 0
+            fi
+            echo "Waiting for the website to be up... $i seconds passed."
+            sleep $INTERVAL
+          done
+
+          echo "Website did not become available within 5 minutes. Exiting with failure."
+          exit 1
+
   upload-site:
     runs-on: ubuntu-latest
     permissions:
