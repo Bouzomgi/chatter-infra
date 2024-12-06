@@ -39,8 +39,8 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-deployment
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Spin up Core Stack
-        run: npx cdk deploy CoreStack --require-approval never
+      # - name: Spin up Core Stack
+      #   run: npx cdk deploy CoreStack --require-approval never
 
       - name: Wait for Website to be Available
         run: |
