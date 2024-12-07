@@ -204,7 +204,7 @@ export class DynamicStack extends Stack {
       'api-tg',
       {
         healthCheck: {
-          path: '/health'
+          path: '/api/health'
         },
         port: 80,
         targets: [backendTarget],
