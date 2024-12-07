@@ -1,5 +1,6 @@
 import env from '../config'
-import { App, Stack, StackProps, Fn, cloudformation_include } from 'aws-cdk-lib'
+import { App, Stack, StackProps, Fn, RemovalPolicy } from 'aws-cdk-lib'
+import * as s3 from 'aws-cdk-lib/aws-s3'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as logs from 'aws-cdk-lib/aws-logs'
@@ -7,6 +8,11 @@ import * as iam from 'aws-cdk-lib/aws-iam'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager'
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins'
+import * as cdkTags from 'aws-cdk-lib/core'
+import * as route53 from 'aws-cdk-lib/aws-route53'
+import * as route53_targets from 'aws-cdk-lib/aws-route53-targets'
 
 const awsEnv = {
   env: {
@@ -21,11 +27,22 @@ export class DynamicStack extends Stack {
   constructor(scope: App, id: string, props?: StackProps) {
     super(scope, id, props ? Object.assign(props, awsEnv) : awsEnv)
 
-    // Import Core Stack Outputs
-    const appDistributionId = Fn.importValue('app-distribution-id')
-    const appDistributionDomainName = Fn.importValue(
-      'app-distribution-domain-name'
-    )
+    ///////////// S3 /////////////
+
+    // CREATE S3 BUCKET FOR WEBSERVER
+    const webserverBucket = new s3.Bucket(this, 'webserver', {
+      autoDeleteObjects: true,
+      blockPublicAccess: new s3.BlockPublicAccess({
+        blockPublicPolicy: false,
+        blockPublicAcls: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false
+      }),
+      bucketName: 'chatter-webserver',
+      publicReadAccess: true,
+      removalPolicy: RemovalPolicy.DESTROY,
+      websiteIndexDocument: 'index.html'
+    })
 
     ///////////// VPC /////////////
 
@@ -175,13 +192,11 @@ export class DynamicStack extends Stack {
         }
       }
     )
-
     // GET LOAD BALANCER TARGET FOR APPSERVER
     const backendTarget = backendService.loadBalancerTarget({
-      containerName: backendService.serviceName,
+      containerName: 'api-container',
       containerPort: 80
     })
-    /*
 
     // CREATE TARGET GROUP FOR APPSERVER
     const backendTargetGroup = new elbv2.ApplicationTargetGroup(
@@ -197,22 +212,63 @@ export class DynamicStack extends Stack {
       }
     )
 
-    ///////////// POINT CLOUDFRONT DISTRIBUTION TO ALB /////////////
+    ///////////// CLOUDFRONT DISTRIBUTION /////////////
 
-    const appDistribution = cloudfront.Distribution.fromDistributionAttributes(
+    // CREATE CLOUDFRONT DISTRIBUTION
+    const appDistribution = new cloudfront.Distribution(
       this,
       'chatter-distribution',
       {
-        distributionId: 'appDistributionId',
-        domainName: 'appDistributionDomainName'
+        defaultBehavior: {
+          origin: new origins.S3StaticWebsiteOrigin(webserverBucket)
+        },
+        certificate: Certificate.fromCertificateArn(
+          this,
+          env.DOMAIN_NAME,
+          env.CLOUDFRONT_CERTIFICATE_ARN
+        ),
+        additionalBehaviors: {
+          '/api/*': {
+            cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+            origin: new origins.LoadBalancerV2Origin(frontendLoadBalancer, {
+              protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY
+            }),
+            originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER
+          }
+        },
+        defaultRootObject: 'index.html',
+        domainNames: [env.DOMAIN_NAME],
+        geoRestriction: cloudfront.GeoRestriction.allowlist('US')
       }
     )
-        */
+
+    ///////////// ROUTE 53 /////////////
+
+    //POINT ROUTE53 TO CLOUDFRONT DISTRIBUTION
+    const hostedZone = route53.HostedZone.fromLookup(
+      this,
+      'chatter-hosted-zone',
+      {
+        domainName: env.DOMAIN_NAME
+      }
+    )
+
+    new route53.ARecord(this, 'AliasRecordIPv4', {
+      zone: hostedZone,
+      recordName: env.DOMAIN_NAME,
+      target: route53.RecordTarget.fromAlias(
+        new route53_targets.CloudFrontTarget(appDistribution)
+      )
+    })
+
+    new route53.AaaaRecord(this, 'AliasRecordIPv6', {
+      zone: hostedZone,
+      recordName: env.DOMAIN_NAME,
+      target: route53.RecordTarget.fromAlias(
+        new route53_targets.CloudFrontTarget(appDistribution)
+      )
+    })
+
+    cdkTags.Tags.of(appDistribution).add('project', 'chatter')
   }
 }
-/*
- * try to deploy from the cluster on console
- * add loadbalancer to service
- * attach loadbalancer to cloudfront
- * test it all, then go to chatter-be
- */
