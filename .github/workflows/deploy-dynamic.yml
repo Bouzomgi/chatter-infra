@@ -1,0 +1,94 @@
+name: 'Deploy Core'
+on:
+  workflow_dispatch:
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  deploy-core:
+    runs-on: 'ubuntu-latest'
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+      BACKEND_ECR_REPO_NAME: ${{ vars.BACKEND_ECR_REPO_NAME }}
+      CLOUDFRONT_CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
+      ECS_ECR_ADMIN_ARN: ${{ secrets.ECS_ECR_ADMIN_ARN }}
+      ECS_TASK_EXECUTION_ARN: ${{ secrets.ECS_TASK_EXECUTION_ARN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.12.x
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-deployment
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Check if CoreStack is currently up
+        run: |
+          STACK_NAME="CoreStack"
+          STACK_STATUS=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].StackStatus' --output text 2>&1)
+
+          if [[ ! "$STACK_STATUS" == "CREATE_COMPLETE" || "$STACK_STATUS" == "UPDATE_COMPLETE" ]]; then
+            echo "CoreStack is not up or is in the process of standing up. Exiting workflow."
+            exit 1
+          else
+            echo "CoreStack is in a $STACK_STATUS state. Continuing..."
+            exit 1  # Exit with an error code if the stack is not in a ready state
+          fi
+
+      - name: Spin up Dynamic Stack
+        run: npx cdk deploy Dynamic --require-approval never
+
+      - name: Wait for Domain to be Available
+        run: |
+          TIMEOUT=180  # Timeout in seconds (3 minutes)
+          INTERVAL=5   # Interval between checks in seconds
+
+          for ((i=0; i<$TIMEOUT; i+=$INTERVAL)); do
+            if dig +short ${{ vars.DOMAIN_NAME }}; then
+              echo "Domain is up. Proceeding with the next step."
+              exit 0
+            fi
+            echo "Waiting for the domain to be up... $i seconds passed."
+            sleep $INTERVAL
+          done
+
+          echo "Domain did not become available within 3 minutes. Exiting with failure."
+          exit 1
+
+  upload-site:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    needs: deploy-core
+    steps:
+      - name: Trigger Frontend Deployment
+        uses: actions/github-script@v7.0.1
+        with:
+          github-token: ${{ secrets.CHATTER_PAT }}
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: 'bouzomgi',
+              repo: 'chatter-fe',
+              event_type: 'trigger-deployment',
+              client_payload: {}
+            });
