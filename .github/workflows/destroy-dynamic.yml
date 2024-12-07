@@ -1,4 +1,4 @@
-name: 'Destroy Core'
+name: 'Destroy Dynamic'
 on:
   workflow_dispatch:
 
@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  destroy-core:
+  destroy-dynamic:
     runs-on: 'ubuntu-latest'
     environment: prod
     permissions:
