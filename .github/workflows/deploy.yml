@@ -68,7 +68,7 @@ jobs:
           ./scripts/push-starter-image.sh
 
       - name: Spin up Dynamic Stack
-        run: npx cdk deploy Dynamic --require-approval never
+        run: npx cdk deploy DynamicStack --require-approval never
 
       - name: Wait for Domain to be Available
         run: |
