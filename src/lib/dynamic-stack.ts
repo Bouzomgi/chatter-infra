@@ -1,9 +1,12 @@
 import env from '../config'
-import { App, Stack, StackProps, Fn } from 'aws-cdk-lib'
+import { App, Stack, StackProps, Fn, cloudformation_include } from 'aws-cdk-lib'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as logs from 'aws-cdk-lib/aws-logs'
 import * as iam from 'aws-cdk-lib/aws-iam'
+import * as ecr from 'aws-cdk-lib/aws-ecr'
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2'
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront'
 
 const awsEnv = {
   env: {
@@ -17,6 +20,12 @@ const awsEnv = {
 export class DynamicStack extends Stack {
   constructor(scope: App, id: string, props?: StackProps) {
     super(scope, id, props ? Object.assign(props, awsEnv) : awsEnv)
+
+    // Import Core Stack Outputs
+    const appDistributionId = Fn.importValue('app-distribution-id')
+    const appDistributionDomainName = Fn.importValue(
+      'app-distribution-domain-name'
+    )
 
     ///////////// VPC /////////////
 
@@ -104,8 +113,14 @@ export class DynamicStack extends Stack {
       }
     )
 
+    const ecrRepository = ecr.Repository.fromRepositoryName(
+      this,
+      'backend-ecr-repo',
+      env.BACKEND_ECR_REPO_NAME
+    )
+
     backendTaskDefinition.addContainer('api-container', {
-      image: ecs.ContainerImage.fromRegistry(env.BACKEND_ECR_REPO_NAME),
+      image: ecs.ContainerImage.fromEcrRepository(ecrRepository),
       containerName: 'api-container',
       cpu: 0,
       logging: backendLogDriver,
@@ -124,6 +139,8 @@ export class DynamicStack extends Stack {
       allowAllOutbound: true
     })
 
+    backendSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80))
+
     // SPIN UP BACKEND SERVICE
     const backendService = new ecs.FargateService(this, 'api-service', {
       assignPublicIp: true, //to remove
@@ -135,6 +152,62 @@ export class DynamicStack extends Stack {
         subnetGroupName: 'api'
       }
     })
+
+    ///////////// ADD AND ATTACH ECS LOAD BALANCER /////////////
+    // CREATE LOAD BALANCER SECURITY GROUP
+    const albSecurityGroup = new ec2.SecurityGroup(this, 'alb-sg', {
+      vpc: vpc,
+      allowAllOutbound: true
+    })
+
+    albSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80))
+
+    // CREATE FRONTEND ALB
+    const frontendLoadBalancer = new elbv2.ApplicationLoadBalancer(
+      this,
+      'frontend-alb',
+      {
+        vpc,
+        internetFacing: true,
+        securityGroup: albSecurityGroup,
+        vpcSubnets: {
+          subnetGroupName: 'public'
+        }
+      }
+    )
+
+    // GET LOAD BALANCER TARGET FOR APPSERVER
+    const backendTarget = backendService.loadBalancerTarget({
+      containerName: backendService.serviceName,
+      containerPort: 80
+    })
+    /*
+
+    // CREATE TARGET GROUP FOR APPSERVER
+    const backendTargetGroup = new elbv2.ApplicationTargetGroup(
+      this,
+      'api-tg',
+      {
+        healthCheck: {
+          path: '/health'
+        },
+        port: 80,
+        targets: [backendTarget],
+        vpc: vpc
+      }
+    )
+
+    ///////////// POINT CLOUDFRONT DISTRIBUTION TO ALB /////////////
+
+    const appDistribution = cloudfront.Distribution.fromDistributionAttributes(
+      this,
+      'chatter-distribution',
+      {
+        distributionId: 'appDistributionId',
+        domainName: 'appDistributionDomainName'
+      }
+    )
+        */
   }
 }
 /*

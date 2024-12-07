@@ -8,7 +8,6 @@ import * as cdkTags from 'aws-cdk-lib/core'
 import * as route53 from 'aws-cdk-lib/aws-route53'
 import * as route53_targets from 'aws-cdk-lib/aws-route53-targets'
 import * as ecr from 'aws-cdk-lib/aws-ecr'
-import * as ecs from 'aws-cdk-lib/aws-ecs'
 
 const awsEnv = {
   env: {
@@ -24,7 +23,7 @@ export class CoreStack extends Stack {
     super(scope, id, props ? Object.assign(props, awsEnv) : awsEnv)
 
     // CREATE S3 BUCKET FOR WEBSERVER
-    const webserverBucket = new s3.Bucket(this, 'chatter-webserver', {
+    const webserverBucket = new s3.Bucket(this, 'webserver', {
       autoDeleteObjects: true,
       blockPublicAccess: new s3.BlockPublicAccess({
         blockPublicPolicy: false,
@@ -39,7 +38,7 @@ export class CoreStack extends Stack {
     })
 
     // CREATE ECR REPOSITORY FOR BACKEND
-    const backendEcrRepo = new ecr.Repository(this, 'chatter-backend-repo', {
+    const backendEcrRepo = new ecr.Repository(this, 'backend-repo', {
       removalPolicy: RemovalPolicy.DESTROY,
       emptyOnDelete: true,
       repositoryName: env.BACKEND_ECR_REPO_NAME
@@ -48,7 +47,7 @@ export class CoreStack extends Stack {
     // CREATE CLOUDFRONT DISTRIBUTION
     const appDistribution = new cloudfront.Distribution(
       this,
-      'chatter-cloudfront-distribution',
+      'chatter-distribution',
       {
         defaultBehavior: {
           origin: new origins.S3StaticWebsiteOrigin(webserverBucket)
@@ -91,5 +90,15 @@ export class CoreStack extends Stack {
     })
 
     cdkTags.Tags.of(appDistribution).add('project', 'chatter')
+
+    new CfnOutput(this, 'app-distribution-id-output', {
+      value: 'app-distribution-id',
+      exportName: appDistribution.distributionId
+    })
+
+    new CfnOutput(this, 'app-distribution-domain-name-output', {
+      value: 'app-distribution-domain-name',
+      exportName: appDistribution.distributionDomainName
+    })
   }
 }
