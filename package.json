@@ -10,11 +10,8 @@
     "watch": "npm run clean && npx tsc -w",
     "lint": "npx eslint --fix --ext .ts . && npx prettier --write src/",
     "check-lint": "npx eslint --fix --ext .ts . && npx prettier --check src/",
-    "bootstrap": "cdk bootstrap",
-    "synth": "cdk synth",
-    "deploy": "cdk deploy",
-    "destroy": "cdk destroy",
-    "local:deploy-core": "npm run deploy CoreStack && export $(cat .env | xargs) && ./scripts/push-starter-image.sh"
+    "local:deploy-core": "npx cdk deploy CoreStack && export $(cat .env | xargs) && ./scripts/push-starter-image.sh",
+    "local:deploy-all": "npm run local:deploy-core && npx cdk deploy DynamicStack"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
