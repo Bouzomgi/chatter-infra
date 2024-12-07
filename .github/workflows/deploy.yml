@@ -44,18 +44,18 @@ jobs:
       - name: Check if Core Stack is currently deployed
         run: |
           STACK_NAME="CoreStack"
-          STACK_STATUS=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].StackStatus' --output text 2>&1) || {
-            if [[ "$STACK_STATUS" == "CREATE_COMPLETE" || "$STACK_STATUS" == "UPDATE_COMPLETE" ]]; then
-              echo "CoreStack is up and running"
-              echo "deployCoreStack=false" >> $GITHUB_ENV
-            elif [[ "$STACK_STATUS" == *"Stack with id $STACK_NAME does not exist"* ]]; then
-              echo "CoreStack is not up. Will deploy now"
-              echo "deployCoreStack=true" >> $GITHUB_ENV
-            else
-              echo "CoreStack is in an intermittent state. Terminating"
-              exit 1
-            fi
-          }
+          STACK_STATUS=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].StackStatus' --output text 2>&1) || true
+          
+          if [[ "$STACK_STATUS" == "CREATE_COMPLETE" || "$STACK_STATUS" == "UPDATE_COMPLETE" ]]; then
+            echo "CoreStack is up and running"
+            echo "deployCoreStack=false" >> $GITHUB_ENV
+          elif [[ "$STACK_STATUS" == *"Stack with id $STACK_NAME does not exist"* ]]; then
+            echo "CoreStack is not up. Will deploy now"
+            echo "deployCoreStack=true" >> $GITHUB_ENV
+          else
+            echo "CoreStack is in an intermittent state. Terminating"
+            exit 1
+          fi
 
       - name: Spin up Core Stack
         if: env.deployCoreStack == 'true'
