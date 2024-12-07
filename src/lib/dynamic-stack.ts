@@ -160,7 +160,6 @@ export class DynamicStack extends Stack {
 
     // SPIN UP BACKEND SERVICE
     const backendService = new ecs.FargateService(this, 'api-service', {
-      assignPublicIp: true, //to remove
       cluster,
       securityGroups: [backendSecurityGroup],
       serviceName: 'api-service',
