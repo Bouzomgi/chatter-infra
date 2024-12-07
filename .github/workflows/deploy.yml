@@ -49,21 +49,21 @@ jobs:
           
           if [[ "$STACK_STATUS" == "CREATE_COMPLETE" || "$STACK_STATUS" == "UPDATE_COMPLETE" ]]; then
             echo "CoreStack is up and running"
-            echo "::set-output name=deployCoreStack::false"
-          elif [[ "$STACK_STATUS" == "An error occurred (ValidationError) when calling the DescribeStacks operation: Stack with id $STACK_NAME does not exist" ]]; then
+            echo "deployCoreStack=false" >> $GITHUB_ENV
+          elif [[ "$STACK_STATUS" == *"Stack with id $STACK_NAME does not exist"* ]]; then
             echo "CoreStack is not up. Will deploy now"
-            echo "::set-output name=deployCoreStack::true"
+            echo "deployCoreStack=true" >> $GITHUB_ENV
           else
             echo "CoreStack is in an intermittent state. Terminating"
             exit 1
           fi
 
       - name: Spin up Core Stack
-        if: steps.checkCoreStack.outputs.deployCoreStack == 'true'
+        if: env.deployCoreStack == 'true'
         run: npx cdk deploy CoreStack --require-approval never
 
       - name: Upload Starter Image to Backend ECR Repository
-        if: steps.checkCoreStack.outputs.deployCoreStack == 'true'
+        if: env.deployCoreStack == 'true'
         run: |
           chmod +x ./scripts/push-starter-image.sh
           ./scripts/push-starter-image.sh
