@@ -212,6 +212,18 @@ export class DynamicStack extends Stack {
       }
     )
 
+    // CREATE LISTENER AND ASSIGN TARGET GROUPS
+    const frontendListener = frontendLoadBalancer.addListener(
+      'frontend-listener',
+      {
+        port: 80
+      }
+    )
+
+    frontendListener.addTargetGroups('api-targets', {
+      targetGroups: [backendTargetGroup]
+    })
+
     ///////////// CLOUDFRONT DISTRIBUTION /////////////
 
     // CREATE CLOUDFRONT DISTRIBUTION

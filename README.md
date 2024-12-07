@@ -22,14 +22,18 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
   * new BackendInfraStack(app, 'BackendInfraStack', {staticAssetsBucket: staticAssetsStack.bucket});
   
 ## Milestones
-* |COMPLETE| Have S3 bucket webpage accessible from IP
-  * |COMPLETE| Same with URL
-* Have ECS layer accessible from URL
-* Have S3 content be able to hit the ECS layer
-* Set up RDS
-* Ensure I can update content on S3 via Jenkins
-  * Same with ECS
-
+* [x] Have S3 bucket webpage accessible from IP
+  * [x] Same with URL
+* [x] Have ECS layer accessible from URL
+* [] Write a destroy-dynamic GHA workflow
+* [] Write a deploy-dynamic GHA workflow
+  * This should check that core is up, if not, run deploy-core
+  * This should invoke the FE and BE on-push workflows
+    * BE needs on-push logic to upload to ECR and refresh the ECS service
+* [] Ensure I can update content on S3 via GHA
+  * [] Same with ECS
+* [] Have S3 content be able to hit the ECS layer
+* [] Set up RDS
 
 ## Have ECS layer accessible from URL
 * Add ECS cluster, taskDefinition, service to coreStack

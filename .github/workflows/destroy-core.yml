@@ -36,5 +36,8 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-deployment
           aws-region: ${{ vars.AWS_REGION }}
 
+      - name: Destroy DynamicStack (if it exists)
+        run: echo yes | npx cdk destroy DynamicStack
+
       - name: Destroy Core Stack
         run: echo yes | npx cdk destroy CoreStack
