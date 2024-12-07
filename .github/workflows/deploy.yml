@@ -1,4 +1,4 @@
-name: 'Deploy Dynamic'
+name: 'Deploy'
 on:
   workflow_dispatch:
 
@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy-dynamic:
+  deploy:
     runs-on: 'ubuntu-latest'
     environment: prod
     permissions:
@@ -41,18 +41,32 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-deployment
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Check if CoreStack is currently up
+      - name: Check if Core Stack is currently deployed
+        id: checkCoreStack
         run: |
           STACK_NAME="CoreStack"
           STACK_STATUS=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query 'Stacks[0].StackStatus' --output text 2>&1)
-
-          if [[ ! "$STACK_STATUS" == "CREATE_COMPLETE" || "$STACK_STATUS" == "UPDATE_COMPLETE" ]]; then
-            echo "CoreStack is not up or is in the process of standing up. Exiting workflow."
-            exit 1
+          
+          if [[ "$STACK_STATUS" == "CREATE_COMPLETE" || "$STACK_STATUS" == "UPDATE_COMPLETE" ]]; then
+            echo "CoreStack is up and running"
+            echo "::set-output name=deployCoreStack::false"
+          elif [[ "$STACK_STATUS" == "An error occurred (ValidationError) when calling the DescribeStacks operation: Stack with id $STACK_NAME does not exist" ]]; then
+            echo "CoreStack is not up. Will deploy now"
+            echo "::set-output name=deployCoreStack::true"
           else
-            echo "CoreStack is in a $STACK_STATUS state. Continuing..."
-            exit 1  # Exit with an error code if the stack is not in a ready state
+            echo "CoreStack is in an intermittent state. Terminating"
+            exit 1
           fi
+
+      - name: Spin up Core Stack
+        if: steps.checkCoreStack.outputs.deployCoreStack == 'true'
+        run: npx cdk deploy CoreStack --require-approval never
+
+      - name: Upload Starter Image to Backend ECR Repository
+        if: steps.checkCoreStack.outputs.deployCoreStack == 'true'
+        run: |
+          chmod +x ./scripts/push-starter-image.sh
+          ./scripts/push-starter-image.sh
 
       - name: Spin up Dynamic Stack
         run: npx cdk deploy Dynamic --require-approval never

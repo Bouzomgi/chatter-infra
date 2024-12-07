@@ -1,4 +1,4 @@
-name: 'Destroy Dynamic'
+name: 'Destroy'
 on:
   workflow_dispatch:
 
@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  destroy-dynamic:
+  destroy:
     runs-on: 'ubuntu-latest'
     environment: prod
     permissions:
@@ -43,3 +43,6 @@ jobs:
 
       - name: Destroy Dynamic Stack
         run: echo yes | npx cdk destroy DynamicStack
+
+      - name: Destroy Core Stack
+        run: echo yes | npx cdk destroy CoreStack
