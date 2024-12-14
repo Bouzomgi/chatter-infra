@@ -22,6 +22,11 @@ jobs:
       CLOUDFRONT_CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
       ECS_ECR_ADMIN_ARN: ${{ secrets.ECS_ECR_ADMIN_ARN }}
       ECS_TASK_EXECUTION_ARN: ${{ secrets.ECS_TASK_EXECUTION_ARN }}
+      # BACKEND
+      PORT: ${{ vars.PORT }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      STORAGE_BUCKET_NAME: ${{ vars.STORAGE_BUCKET_NAME }}
+      TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

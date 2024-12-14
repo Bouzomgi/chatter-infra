@@ -141,6 +141,13 @@ export class DynamicStack extends Stack {
       containerName: 'api-container',
       cpu: 0,
       logging: backendLogDriver,
+      environment: {
+        PORT: env.PORT,
+        DATABASE_URL: env.DATABASE_URL,
+        STORAGE_BUCKET_NAME: env.STORAGE_BUCKET_NAME,
+        AWS_DEFAULT_REGION: env.AWS_REGION,
+        TOKEN_SECRET: env.TOKEN_SECRET
+      },
       portMappings: [
         {
           name: 'api-80-tcp',
@@ -170,6 +177,7 @@ export class DynamicStack extends Stack {
     })
 
     ///////////// ADD AND ATTACH ECS LOAD BALANCER /////////////
+
     // CREATE LOAD BALANCER SECURITY GROUP
     const albSecurityGroup = new ec2.SecurityGroup(this, 'alb-sg', {
       vpc: vpc,
