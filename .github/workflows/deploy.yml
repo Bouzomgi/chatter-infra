@@ -111,7 +111,6 @@ jobs:
               client_payload: {}
             });
 
-
   update-api:
     runs-on: ubuntu-latest
     permissions:
