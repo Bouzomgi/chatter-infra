@@ -139,16 +139,23 @@ export class DynamicStack extends Stack {
       env.BACKEND_ECR_REPO_NAME
     )
 
-    const databaseSecret = sm.Secret.fromSecretNameV2(
-      this,
-      'DatabaseUrlSecret',
-      env.DATABASE_URL
-    )
-    const tokenSecret = sm.Secret.fromSecretNameV2(
-      this,
-      'TokenSecret',
-      env.TOKEN_SECRET
-    )
+    const databaseSecret = new sm.Secret(this, 'DatabaseSecret', {
+      secretName: 'DatabaseUrl',
+      description: 'Stores the database URL for Chatter API.',
+      secretObjectValue: {
+        DATABASE_URL: cdk.SecretValue.unsafePlainText(env.DATABASE_URL)
+      }
+    })
+    const jwtSecret = new sm.Secret(this, 'JwtSecret', {
+      secretName: 'JwtSigningSecret',
+      description: 'Stores the JWT signing secret for Chatter API.',
+      generateSecretString: {
+        secretStringTemplate: '',
+        generateStringKey: '',
+        excludePunctuation: true,
+        passwordLength: 32
+      }
+    })
 
     backendTaskDefinition.addContainer('api-container', {
       image: ecs.ContainerImage.fromEcrRepository(ecrRepository),
@@ -162,7 +169,7 @@ export class DynamicStack extends Stack {
       },
       secrets: {
         DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret),
-        TOKEN_SECRET: ecs.Secret.fromSecretsManager(tokenSecret)
+        TOKEN_SECRET: ecs.Secret.fromSecretsManager(jwtSecret)
       },
       portMappings: [
         {
@@ -189,7 +196,8 @@ export class DynamicStack extends Stack {
       taskDefinition: backendTaskDefinition,
       vpcSubnets: {
         subnetGroupName: 'api'
-      }
+      },
+      healthCheckGracePeriod: cdk.Duration.seconds(30)
     })
 
     ///////////// RDS /////////////

@@ -15,8 +15,7 @@ const commonEnv = cleanEnv(process.env, {
   // BACKEND
   PORT: str(),
   DATABASE_URL: str(),
-  STORAGE_BUCKET_NAME: str(),
-  TOKEN_SECRET: str()
+  STORAGE_BUCKET_NAME: str()
 })
 
 export default commonEnv

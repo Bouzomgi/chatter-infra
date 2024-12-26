@@ -26,7 +26,6 @@ jobs:
       PORT: ${{ vars.PORT }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       STORAGE_BUCKET_NAME: ${{ vars.STORAGE_BUCKET_NAME }}
-      TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
