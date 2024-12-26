@@ -32,3 +32,9 @@ Do NOT run `cdk deploy -all` directly. Use the provided npm scripts `local:deplo
 * Fix logic in BE to publish to ECR & deploy on ECS
 * Correct DynamicStack
   * Wire up everything
+
+## TODO:
+- make sure BE can be hit from infra deployment
+  - Look into how we can view the RDS DB
+- set up acceptance tests on BE GHA
+- THEN we can move on to the FE

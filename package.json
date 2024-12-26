@@ -11,7 +11,8 @@
     "lint": "npx eslint --fix --ext .ts . && npx prettier --write src/",
     "check-lint": "npx eslint --fix --ext .ts . && npx prettier --check src/",
     "local:deploy-core": "npx cdk deploy CoreStack && export $(cat .env | xargs) && ./scripts/push-starter-image.sh",
-    "local:deploy-all": "npm run local:deploy-core && npx cdk deploy DynamicStack"
+    "local:deploy-dynamic": "npx cdk deploy DynamicStack",
+    "local:deploy-all": "npm run local:deploy-core && npm run local:deploy-core"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
@@ -23,6 +24,7 @@
     "typescript": "~5.2.2"
   },
   "dependencies": {
+    "aws-cdk": "^2.173.2",
     "aws-cdk-lib": "^2.167.1",
     "constructs": "^10.0.0",
     "dotenv": "^16.4.5",

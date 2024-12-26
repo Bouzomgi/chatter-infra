@@ -2,6 +2,7 @@ import env from '../config'
 import { App, Stack, StackProps, Fn, RemovalPolicy } from 'aws-cdk-lib'
 import * as s3 from 'aws-cdk-lib/aws-s3'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
+import * as rds from 'aws-cdk-lib/aws-rds'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as logs from 'aws-cdk-lib/aws-logs'
 import * as iam from 'aws-cdk-lib/aws-iam'
@@ -13,6 +14,8 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins'
 import * as cdkTags from 'aws-cdk-lib/core'
 import * as route53 from 'aws-cdk-lib/aws-route53'
 import * as route53_targets from 'aws-cdk-lib/aws-route53-targets'
+import * as cdk from 'aws-cdk-lib/core'
+import * as sm from 'aws-cdk-lib/aws-secretsmanager'
 
 const awsEnv = {
   env: {
@@ -136,6 +139,18 @@ export class DynamicStack extends Stack {
       env.BACKEND_ECR_REPO_NAME
     )
 
+    // how can i label these with Chatter?
+    const databaseSecret = sm.Secret.fromSecretNameV2(
+      this,
+      'DatabaseUrlSecret',
+      env.DATABASE_URL
+    )
+    const tokenSecret = sm.Secret.fromSecretNameV2(
+      this,
+      'TokenSecret',
+      env.TOKEN_SECRET
+    )
+
     backendTaskDefinition.addContainer('api-container', {
       image: ecs.ContainerImage.fromEcrRepository(ecrRepository),
       containerName: 'api-container',
@@ -148,6 +163,10 @@ export class DynamicStack extends Stack {
         AWS_DEFAULT_REGION: env.AWS_REGION,
         TOKEN_SECRET: env.TOKEN_SECRET
       },
+      secrets: {
+        DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret),
+        TOKEN_SECRET: ecs.Secret.fromSecretsManager(tokenSecret)
+      },
       portMappings: [
         {
           name: 'api-80-tcp',
@@ -158,22 +177,58 @@ export class DynamicStack extends Stack {
     })
 
     // CREATE WEB SERVER SECURITY GROUP
-    const backendSecurityGroup = new ec2.SecurityGroup(this, 'api-sg', {
+    const ecsSecurityGroup = new ec2.SecurityGroup(this, 'api-sg', {
       vpc: vpc,
       allowAllOutbound: true
     })
 
-    backendSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80))
+    ecsSecurityGroup.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(80))
 
     // SPIN UP BACKEND SERVICE
     const backendService = new ecs.FargateService(this, 'api-service', {
       cluster,
-      securityGroups: [backendSecurityGroup],
+      securityGroups: [ecsSecurityGroup],
       serviceName: 'api-service',
       taskDefinition: backendTaskDefinition,
       vpcSubnets: {
         subnetGroupName: 'api'
       }
+    })
+
+    ///////////// RDS /////////////
+    const rdsSecurityGroup = new ec2.SecurityGroup(this, 'RdsSecurityGroup', {
+      vpc,
+      description: 'Allow traffic from ECS tasks to the RDS instance',
+      allowAllOutbound: true
+    })
+
+    // Modify inbound rule for RDS security group to allow traffic from ECS tasks
+    rdsSecurityGroup.addIngressRule(
+      ecsSecurityGroup,
+      ec2.Port.tcp(5432),
+      'Allow inbound traffic from ECS tasks on Postgres port'
+    )
+
+    new rds.DatabaseInstance(this, 'chatter-db', {
+      engine: rds.DatabaseInstanceEngine.postgres({
+        version: rds.PostgresEngineVersion.VER_14
+      }),
+      vpc: vpc,
+      vpcSubnets: {
+        subnets: vpc.privateSubnets
+      },
+      credentials: rds.Credentials.fromGeneratedSecret('dbadmin'),
+      databaseName: 'chatterDb',
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.T4G,
+        ec2.InstanceSize.MICRO
+      ),
+      allocatedStorage: 20,
+      storageType: rds.StorageType.GP3,
+      backupRetention: cdk.Duration.days(7),
+      deletionProtection: false,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      publiclyAccessible: false
     })
 
     ///////////// ADD AND ATTACH ECS LOAD BALANCER /////////////
