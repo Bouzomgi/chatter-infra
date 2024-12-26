@@ -139,7 +139,6 @@ export class DynamicStack extends Stack {
       env.BACKEND_ECR_REPO_NAME
     )
 
-    // how can i label these with Chatter?
     const databaseSecret = sm.Secret.fromSecretNameV2(
       this,
       'DatabaseUrlSecret',
@@ -158,10 +157,8 @@ export class DynamicStack extends Stack {
       logging: backendLogDriver,
       environment: {
         PORT: env.PORT,
-        DATABASE_URL: env.DATABASE_URL,
         STORAGE_BUCKET_NAME: env.STORAGE_BUCKET_NAME,
-        AWS_DEFAULT_REGION: env.AWS_REGION,
-        TOKEN_SECRET: env.TOKEN_SECRET
+        AWS_DEFAULT_REGION: env.AWS_REGION
       },
       secrets: {
         DATABASE_URL: ecs.Secret.fromSecretsManager(databaseSecret),
