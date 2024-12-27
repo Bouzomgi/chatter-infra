@@ -21,16 +21,6 @@ jobs:
       AWS_REGION: ${{ vars.AWS_REGION }}
 
     steps:
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.12.x
-          cache: npm
-
-      - name: Install Dependencies
-        run: |
-          npm install -g aws-cdk
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
