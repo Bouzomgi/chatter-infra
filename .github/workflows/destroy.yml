@@ -10,6 +10,8 @@ concurrency:
 jobs:
   destroy:
     runs-on: 'ubuntu-latest'
+    container:
+      image: contino/aws-cdk
     environment: prod
     permissions:
       id-token: write
