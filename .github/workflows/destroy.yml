@@ -27,6 +27,9 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       STORAGE_BUCKET_NAME: ${{ vars.STORAGE_BUCKET_NAME }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
