@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   destroy:
-    runs-on: 'ubuntu-latest'
+    runs-on: contino/aws-cdk
     environment: prod
     permissions:
       id-token: write
@@ -18,11 +18,6 @@ jobs:
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
       AWS_REGION: ${{ vars.AWS_REGION }}
     steps:
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.12.x
-          cache: npm
 
       - name: Install CDK
         run: npm install --no-package-lock cdk
