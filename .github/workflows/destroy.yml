@@ -22,6 +22,7 @@ jobs:
       CLOUDFRONT_CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
       ECS_ECR_ADMIN_ARN: ${{ secrets.ECS_ECR_ADMIN_ARN }}
       ECS_TASK_EXECUTION_ARN: ${{ secrets.ECS_TASK_EXECUTION_ARN }}
+      LOCAL_IP: ${{ secrets.LOCAL_IP }}
       # BACKEND
       PORT: ${{ vars.PORT }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
