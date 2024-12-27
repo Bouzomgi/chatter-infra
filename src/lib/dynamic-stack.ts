@@ -93,6 +93,48 @@ export class DynamicStack extends Stack {
       })
     })
 
+    ///////////// BASTION INSTANCE /////////////
+
+    // Security Group for the Bastion host
+    const bastionSecurityGroup = new ec2.SecurityGroup(
+      this,
+      'chatter-bastion-sg',
+      {
+        vpc,
+        description: 'Allow SSH access to bastion host',
+        allowAllOutbound: true
+      }
+    )
+
+    // Allow SSH from IP address
+    bastionSecurityGroup.addIngressRule(
+      ec2.Peer.ipv4(env.LOCAL_IP),
+      ec2.Port.tcp(22),
+      'Allow SSH from my IP'
+    )
+
+    // Bastion host EC2 instance
+    const bastionHost = new ec2.Instance(this, 'chatter-bastion', {
+      vpc,
+      instanceType: ec2.InstanceType.of(
+        ec2.InstanceClass.T2,
+        ec2.InstanceSize.MICRO
+      ),
+      machineImage: ec2.MachineImage.genericLinux({
+        'us-east-1': 'ami-0f9ae750e8274075b'
+      }),
+      securityGroup: bastionSecurityGroup,
+      keyName: 'chatter-kp',
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PUBLIC
+      }
+    })
+
+    // Add IAM Role to the Bastion host
+    bastionHost.role.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
+    )
+
     ///////////// ECS /////////////
 
     // GET REFERENCES TO EXISTING ROLES TO BE USED BY ECS

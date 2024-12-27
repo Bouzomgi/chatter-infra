@@ -12,6 +12,8 @@ const commonEnv = cleanEnv(process.env, {
   ECS_ECR_ADMIN_ARN: str(),
   ECS_TASK_EXECUTION_ARN: str(),
 
+  LOCAL_IP: str(),
+
   // BACKEND
   PORT: str(),
   DATABASE_URL: str(),
