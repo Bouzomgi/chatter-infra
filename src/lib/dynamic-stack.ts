@@ -108,7 +108,7 @@ export class DynamicStack extends Stack {
 
     // Allow SSH from IP address
     bastionSecurityGroup.addIngressRule(
-      ec2.Peer.ipv4(env.LOCAL_IP),
+      ec2.Peer.ipv6(env.LOCAL_IP),
       ec2.Port.tcp(22),
       'Allow SSH from my IP'
     )
